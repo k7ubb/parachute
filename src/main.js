@@ -13,10 +13,9 @@ const loadImage = async (path) => {
 };
 
 const images = {};
-const ctx = AutoresizeCanvas(document.getElementById("game"), 900, 1600);
-const $ = new ItemsCanvas(ctx, ctx.getMouseCoordinates, ctx.isScaledPointInPath);
-ctx.onResize = () => $.update();
-
+const lib = new AutoresizeCanvas(document.getElementById("game"), 900, 1600);
+const $ = new ItemsCanvas(lib.context, lib.getMouseCoordinates, lib.isScaledPointInPath);
+lib.onResize = () => $.update();
 
 (async () => {
 	images.heli = [

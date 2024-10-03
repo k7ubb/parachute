@@ -1,12 +1,12 @@
 class Controller {
-	CENTER_BUTTON_RATIO = 2.5;
+	CENTER_BUTTON_RATIO = 2.8;
 	
 	constructor(center, radius, execShot, execRotate) {
 		this.path = { center, radius },
 		this.draw = function() {
 			$.ctx.bbFill(this.path, "#fff");
-			$.ctx.bbStroke(this.path, {color: "#000", width: 2});
-			$.ctx.bbStroke({ center, radius: radius / this.CENTER_BUTTON_RATIO }, {color: "#000", width: 2});
+			$.ctx.bbStroke(this.path, {color: "#999", width: 2});
+			$.ctx.bbStroke({ center, radius: radius / this.CENTER_BUTTON_RATIO }, {color: "#999", width: 2});
 		};
 		this.onClick = () => {
 			if ($.isPointInPath({ center, radius: radius / this.CENTER_BUTTON_RATIO }, $.mouseX, $.mouseY)) {

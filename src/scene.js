@@ -7,19 +7,56 @@ const gameScene = () => {
 	const GAME_SCREEN_Y = 100;
 
 	const game = new Game();
+	let gameoverFlg = false;
+	let isPaused = false;
 
 	$.reset();
 	
 	$.addItem({
 		draw: () => {
-			$.ctx.bbFill({rect: [0, 0, 900, GAME_SCREEN_Y]}, "#fff");
-			$.ctx.bbFill({rect: [0, 0, GAME_SCREEN_X, 1600]}, "#fff");
-			$.ctx.bbFill({rect: [GAME_SCREEN_X + GAME_SCREEN_W, 0, GAME_SCREEN_X, 1600]}, "#fff");
-			$.ctx.bbFill({rect: [0, GAME_SCREEN_Y + GAME_SCREEN_H, 900, 1600 - GAME_SCREEN_Y - GAME_SCREEN_H]}, "#fff");
+			const path = new Path2D();
+			const points = [
+				[GAME_SCREEN_X, GAME_SCREEN_Y],
+				[GAME_SCREEN_X, GAME_SCREEN_Y + GAME_SCREEN_H],
+				[GAME_SCREEN_X + GAME_SCREEN_W, GAME_SCREEN_Y + GAME_SCREEN_H],
+				[GAME_SCREEN_X + GAME_SCREEN_W, GAME_SCREEN_Y]
+			];
+			const radius = 8;
+			path.rect(0, 0, 900, 1600);
+			path.moveTo(points[0][0] + radius, points[0][1]);
+			path.arc(points[0][0] + radius, points[0][1] + radius, radius, Math.PI * 1.5, Math.PI, true);
+			path.lineTo(points[1][0], points[1][1] - radius);
+			path.arc(points[1][0] + radius, points[1][1] - radius, radius, Math.PI, Math.PI * .5, true);
+			path.lineTo(points[2][0] - radius, points[2][1]);
+			path.arc(points[2][0] - radius, points[2][1] - radius, radius, Math.PI * .5, 0, true);
+			path.lineTo(points[3][0], points[3][1] + radius);
+			path.arc(points[3][0] - radius, points[3][1] + radius, radius, 0, Math.PI * 1.5, true);
+			$.ctx.fillStyle = "#fff";
+			$.ctx.fill(path, "evenodd");
+			$.ctx.bbStroke({rect: [GAME_SCREEN_X, GAME_SCREEN_Y, GAME_SCREEN_W ,GAME_SCREEN_H], radius}, {width: 2, color: "#999"});
 		}
 	});
 
-	$.addItem(new Controller(
+	const [pauseButton] = $.addItem({
+		path: {
+			center: {x: 120, y: 750},
+			radius: 70
+		},
+		draw: function() {
+			$.ctx.bbStroke(this.path, {color: "#999", width: 2});
+			$.ctx.bbText("PAUSE", 120, 750, {size: 25, align: "center", baseline: "middle", color: "#999"});
+		},
+		onHover: function() {
+			$.ctx.bbFill(this.path, "rgba(0 0 0 / .1)");
+		},
+		onClick: () => {
+			isPaused = !isPaused;
+			controller.disabled = isPaused;
+			$.update();
+		}
+	});
+
+	const [controller] = $.addItem(new Controller(
 		{x: 450, y: 1100},
 		300,
 		() => game.shot(),
@@ -48,16 +85,32 @@ const gameScene = () => {
 		}
 		
 		// ヘリ
-		// 1: 本当はheli.yを定義しておく
 		for (const heli of game.helis) {
 			if (heli.v > 0) {
-				$.ctx.drawImage(images.heli[0], heli.x - 16, 1 * 20);
+				$.ctx.drawImage(images.heli[0], heli.x - 16, heli.y - 10);
 			} else{
-				$.ctx.drawImage(images.heli[1], heli.x - 16, 1 * 20);
+				$.ctx.drawImage(images.heli[1], heli.x - 16, heli.y - 10);
 			}
 		}
 
-		$.ctx.bbText(("00" + game.score).slice(-3), 2, 0, {color: "#000", size: 24, font: "DotGothic16"});
+		// 人
+		for (const person of game.people) {
+			$.ctx.drawImage(images.person, person.x - 12, person.y - 12);
+		}
+
+		$.ctx.bbText(("000" + game.score).slice(-4), 2, 0, {color: "#000", size: 24, font: "DotGothic16"});
+
+		if (gameoverFlg) {
+			$.ctx.bbFill({rect: [48, 60, 204, 80]}, "#000");
+			$.ctx.bbFill({rect: [50, 62, 200, 76]}, "#fff");
+			$.ctx.bbText("GAME OVER", 150, 90, {color: "#000", size: 24, align: "center", baseline: "alphabetic", font: "DotGothic16"});
+			$.ctx.bbText("SCORE: " + ("000" + game.score).slice(-4), 150, 130, {color: "#000", size: 28, align: "center", baseline: "alphabetic", font: "DotGothic16"});
+		}
+		if (isPaused) {
+			$.ctx.bbFill({rect: [80, 60, 140, 76]}, "#000");
+			$.ctx.bbFill({rect: [82, 62, 136, 72]}, "#fff");
+			$.ctx.bbText("PAUSE", 150, 114, {color: "#000", size: 40, align: "center", baseline: "alphabetic", font: "DotGothic16"});
+		}
 
 		$.ctx.restore();
 	};
@@ -65,8 +118,13 @@ const gameScene = () => {
 	$.update();
 
 	const main = () => {
-		game.main();
-		setTimeout(main, 1000 / 30);
+		if (!isPaused && (gameoverFlg = game.main())) {
+			controller.disabled = true;
+			pauseButton.disabled = true;
+			$.update();
+		} else {
+			setTimeout(main, 1000 / 30);
+		}
 	};
 	main();
 };
